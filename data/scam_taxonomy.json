@@ -1,0 +1,192 @@
+{
+  "schema_version": "1.0",
+  "description": "Digital-arrest scam stage taxonomy and red-flag corpus for FraudShield. Used in two ways: (1) as the knowledge base indexed into ChromaDB for retrieval, and (2) as the reference the LLM classifies a transcript against. Stage = how far the scam has progressed (drives lead-time). Red flags = atomic signals the classifier detects.",
+
+  "stages": [
+    {
+      "id": 0,
+      "name": "Setup / Pre-contact",
+      "intent": "Establish a channel and a plausible-looking origin before the victim engages.",
+      "indicators": [
+        "Incoming call or video call over WhatsApp / Skype / Telegram from an unknown number",
+        "Spoofed or international-looking number presented as an official agency line",
+        "Caller insists on switching to video immediately"
+      ],
+      "example_lines": [
+        "Hello, am I speaking with [name]? This is an official call, please switch on your video.",
+        "This call is being recorded for an official investigation."
+      ]
+    },
+    {
+      "id": 1,
+      "name": "Pretext",
+      "intent": "Plant a false premise that links the victim to a crime or official matter.",
+      "indicators": [
+        "Claims a parcel / SIM / Aadhaar / bank account in the victim's name is linked to a crime",
+        "Impersonation of CBI, ED, Customs, TRAI, Narcotics, Cyber Cell, or local police",
+        "Reference to a fake case/FIR/complaint number to sound legitimate"
+      ],
+      "example_lines": [
+        "A parcel sent in your name has been seized at the airport. It contained illegal items.",
+        "Your Aadhaar number has been used to open an account involved in money laundering.",
+        "This is Inspector [name] from the CBI Cyber Crime division, badge number..."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Fear & Authority",
+      "intent": "Overwhelm judgement with fear of arrest and the weight of authority.",
+      "indicators": [
+        "Accusation of money laundering, drug trafficking, or terror financing",
+        "Explicit threat of arrest, non-bailable warrant, or account freeze",
+        "Appearance in uniform; showing fake ID cards, court documents, or arrest warrants",
+        "Fake police-station / courtroom / control-room backdrop on video"
+      ],
+      "example_lines": [
+        "Your name is in a money-laundering case. A non-bailable warrant has been issued.",
+        "If you disconnect this call, you will be arrested within two hours.",
+        "I am sending you the arrest warrant now. Read your name on it."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Isolation & Control",
+      "intent": "Cut the victim off from anyone who could break the spell, and assert continuous custody.",
+      "indicators": [
+        "Demand to stay on a continuous video call ('digital custody' / 'digital arrest')",
+        "Instruction to tell no one — family, bank, or friends",
+        "Framing as a confidential national-security or RBI/Supreme-Court-monitored matter",
+        "Instruction not to leave the room, not to cut the call, to stay awake/available"
+      ],
+      "example_lines": [
+        "You are now under digital arrest. Do not disconnect this video call for any reason.",
+        "This matter is strictly confidential. If you tell your family you will be charged with obstruction.",
+        "Keep your camera on at all times. We are monitoring you."
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Extraction",
+      "intent": "Convert fear into an irreversible financial action.",
+      "indicators": [
+        "Demand to transfer money to a 'safe' / 'RBI verification' / 'escrow' account",
+        "Request for OTP, card number, CVV, UPI PIN, or net-banking credentials",
+        "Instruction to install a remote-access app (AnyDesk, TeamViewer, QuickSupport)",
+        "Framing the transfer as refundable 'verification' that will be returned after the probe"
+      ],
+      "example_lines": [
+        "To prove the money is clean, transfer it to this RBI-verified account. It will be refunded.",
+        "Share the OTP you just received so we can verify your account.",
+        "Download AnyDesk so our officer can check your banking activity directly."
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Prolongation",
+      "intent": "Extend custody and extract repeatedly until the victim is exhausted or out of funds.",
+      "indicators": [
+        "Further transfer demands after the first payment",
+        "New fabricated charges requiring 'additional verification'",
+        "Pressure to take loans, break FDs, or borrow to pay"
+      ],
+      "example_lines": [
+        "The verification found more suspicious funds. You must transfer the remaining balance too.",
+        "Your case is not closed. One more payment is required to clear your name today."
+      ]
+    }
+  ],
+
+  "red_flags": [
+    {
+      "id": "RF01",
+      "label": "Authority impersonation",
+      "description": "Caller claims to be a government / law-enforcement / regulatory body (CBI, ED, Customs, TRAI, police, RBI).",
+      "weight": "high"
+    },
+    {
+      "id": "RF02",
+      "label": "Criminal accusation",
+      "description": "Victim is accused of a serious crime (laundering, trafficking, terror financing).",
+      "weight": "high"
+    },
+    {
+      "id": "RF03",
+      "label": "Arrest / legal threat",
+      "description": "Threat of arrest, warrant, account freeze, or prosecution to induce fear.",
+      "weight": "high"
+    },
+    {
+      "id": "RF04",
+      "label": "Isolation / secrecy demand",
+      "description": "Instruction to tell no one, stay on the call, or not contact family/bank.",
+      "weight": "high"
+    },
+    {
+      "id": "RF05",
+      "label": "Continuous-video custody",
+      "description": "Demand to remain on video as 'digital arrest' / 'digital custody'.",
+      "weight": "high"
+    },
+    {
+      "id": "RF06",
+      "label": "Remote-access app request",
+      "description": "Asked to install AnyDesk / TeamViewer / QuickSupport or similar.",
+      "weight": "critical"
+    },
+    {
+      "id": "RF07",
+      "label": "Credential request",
+      "description": "Asked for OTP, card number, CVV, UPI PIN, or net-banking login.",
+      "weight": "critical"
+    },
+    {
+      "id": "RF08",
+      "label": "Fund-transfer demand",
+      "description": "Asked to transfer money to a 'safe' / 'verification' / 'RBI' account.",
+      "weight": "critical"
+    },
+    {
+      "id": "RF09",
+      "label": "Refundable-verification framing",
+      "description": "Transfer framed as temporary, refundable, or for verification only.",
+      "weight": "high"
+    },
+    {
+      "id": "RF10",
+      "label": "Platform mismatch",
+      "description": "Official 'arrest/investigation' conducted over WhatsApp/Skype/Telegram video — which no real Indian agency does.",
+      "weight": "high"
+    },
+    {
+      "id": "RF11",
+      "label": "Urgency / time pressure",
+      "description": "Artificial deadline ('within 2 hours', 'right now') to prevent reflection.",
+      "weight": "medium"
+    },
+    {
+      "id": "RF12",
+      "label": "Fake case/badge reference",
+      "description": "Cites a fabricated FIR/case number, badge number, or official document to appear legitimate.",
+      "weight": "medium"
+    }
+  ],
+
+  "irreversible_action_triggers": ["RF06", "RF07", "RF08"],
+
+  "scoring_guidance": {
+    "note": "Used by L4 fusion. These are starting heuristics to calibrate against your labelled set, not final thresholds.",
+    "high_risk_condition": "Stage >= 3 AND at least one irreversible_action_trigger present, OR three or more 'high'/'critical' red flags co-occurring.",
+    "caution_condition": "Stage 1-2 with one or more 'high' red flags, but no irreversible_action_trigger yet.",
+    "abstain_condition": "Only 'medium' red flags, or ambiguous single signal — stay silent rather than risk a false positive.",
+    "lead_time_principle": "The goal is to reach HIGH-RISK at Stage 2-3, BEFORE Stage 4 extraction. Report the gap between the stage at first HIGH-RISK and the extraction stage as the lead-time metric."
+  },
+
+  "benign_contrast_examples": {
+    "note": "Real calls that share surface features but are NOT scams — use these as hard negatives to drive the false-positive rate down.",
+    "examples": [
+      "A real bank fraud-prevention line asking you to verify a suspicious transaction — but never asking for OTP or a transfer, and willing to let you call back on the official number.",
+      "A genuine courier asking you to confirm a delivery address with no threat and no payment demand.",
+      "A police verification call for passport/tenant checks that never asks for money and never demands you stay on video."
+    ]
+  }
+}

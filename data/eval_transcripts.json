@@ -1,0 +1,87 @@
+{
+  "schema_version": "1.0",
+  "description": "Labelled evaluation set for FraudShield. Each item is a (truncated) call transcript with ground-truth labels. 'is_scam' is the binary target. 'max_stage' is the furthest scam stage reached (0-5; null for benign). 'expected_red_flags' lists the red-flag IDs a good classifier should catch. 'notes' explains why the case is included. Benign hard-negatives deliberately share surface features with scams to stress-test the false-positive rate. EXPAND THIS as you read real transcripts — more cases = more reliable metrics.",
+
+  "transcripts": [
+    {
+      "id": "SCAM_001",
+      "is_scam": true,
+      "max_stage": 4,
+      "expected_red_flags": ["RF01", "RF02", "RF03", "RF04", "RF05", "RF08", "RF09", "RF10"],
+      "notes": "Full classic digital-arrest arc, parcel pretext, reaches extraction. The canonical positive case.",
+      "transcript": "Caller: Hello, am I speaking with Mr. Sharma? This is Inspector Verma from CBI Mumbai Cyber Crime, badge number 4471. A courier parcel booked in your name and Aadhaar has been intercepted at Mumbai airport. It contained 200 grams of MDMA drugs and four expired passports.\nVictim: What? I never sent any parcel.\nCaller: Sir, this is a very serious money laundering and narcotics case. A non-bailable warrant is being prepared in your name right now. I am switching to video call so you can see my official ID and the warrant. Turn your camera on.\nVictim: Please, there must be some mistake.\nCaller: Listen carefully. You are now under digital arrest. Do not disconnect this video call for any reason, do not leave the room, and do not tell anyone in your family — this is a confidential national security matter and informing anyone is itself a punishable offence. To prove your bank funds are clean and not from drug money, you must transfer your balance to this RBI verification account. It is fully refundable once the investigation clears you. How much do you have in your savings account?"
+    },
+    {
+      "id": "SCAM_002",
+      "is_scam": true,
+      "max_stage": 2,
+      "expected_red_flags": ["RF01", "RF02", "RF03", "RF12"],
+      "notes": "Early-stage case. Fear and authority established but NO extraction yet. The classifier should reach CAUTION/HIGH but this is the lead-time test — can it flag before money is mentioned?",
+      "transcript": "Caller: This is the Telecom Regulatory Authority, TRAI. Your mobile number is being deactivated in two hours because it is linked to a harassment and fraud case registered in Andheri police station, FIR number 0931 of 2026.\nVictim: I haven't done anything.\nCaller: A case is filed against you. I am connecting you to the cyber crime officer handling your file. Stay on the line. If you hang up, the police will proceed with the arrest warrant."
+    },
+    {
+      "id": "SCAM_003",
+      "is_scam": true,
+      "max_stage": 4,
+      "expected_red_flags": ["RF01", "RF03", "RF06", "RF07", "RF10"],
+      "notes": "Remote-access + OTP variant rather than direct transfer. Tests the credential/remote-app triggers.",
+      "transcript": "Caller: Madam, I am calling from the ED, Enforcement Directorate. Your bank account has been flagged for suspicious foreign transactions. We are conducting this verification over secure video. Please install the AnyDesk application from the Play Store so our technical officer can verify your account activity directly.\nVictim: I'm not very good with apps.\nCaller: I will guide you, it is simple. After installing, read out the nine-digit code it shows. And when you receive an OTP on your phone, share it with me immediately — it is part of the government verification, do not refuse or it will be treated as non-cooperation with a federal investigation."
+    },
+    {
+      "id": "SCAM_004",
+      "is_scam": true,
+      "max_stage": 3,
+      "expected_red_flags": ["RF01", "RF02", "RF04", "RF05", "RF10"],
+      "notes": "Strong isolation/custody language, stops before extraction. Another lead-time case.",
+      "transcript": "Caller: You are speaking to the Customs Department. Listen very carefully and do not interrupt. A package from Taiwan in your name has been seized with illegal items. This call is now being monitored by senior officials. You must keep your video on at all times, you are under our custody now. Do not contact your bank, your lawyer, or your family until we permit it. Anyone you tell becomes a co-accused. Sit in front of the camera and wait for the interrogation officer."
+    },
+    {
+      "id": "SCAM_005",
+      "is_scam": true,
+      "max_stage": 5,
+      "expected_red_flags": ["RF01", "RF03", "RF08", "RF09"],
+      "notes": "Prolongation — a second demand after a first payment. Tests detection of repeat extraction.",
+      "transcript": "Caller: The first transfer has been received and partially verified. However, our investigation has now found two more suspicious transactions in your account history. To fully clear your name today and avoid the arrest, you will need to transfer the remaining balance in your fixed deposit as well. Break the FD now. This is the final step, after this your case will be closed and everything refunded within 24 hours."
+    },
+    {
+      "id": "BENIGN_001",
+      "is_scam": false,
+      "max_stage": null,
+      "expected_red_flags": [],
+      "notes": "Real bank fraud-prevention call. Shares 'suspicious transaction' surface feature but NEVER asks for OTP/transfer and invites callback on the official number. Must NOT be flagged.",
+      "transcript": "Caller: Good afternoon, this is Priya calling from HDFC Bank's fraud prevention team. We noticed a transaction of 45,000 rupees on your card at an electronics store in Chennai a few minutes ago. Can you confirm whether this was you?\nVictim: No, I'm in Delhi, that wasn't me.\nCaller: Thank you for confirming. I'll block that card immediately as a precaution and we'll issue a replacement. You don't need to share any OTP or PIN with me — please never share those with anyone. If you'd like to verify this call is genuine, you can hang up and call the number printed on the back of your card and ask for the fraud team."
+    },
+    {
+      "id": "BENIGN_002",
+      "is_scam": false,
+      "max_stage": null,
+      "expected_red_flags": [],
+      "notes": "Genuine courier delivery confirmation. Mentions a parcel (scam pretext surface feature) but no threat, no payment, no authority claim. Must NOT be flagged.",
+      "transcript": "Caller: Hello, this is Rohan from BlueDart. I have a parcel for delivery at your address in sector 12, but the building gate is locked. Could you confirm the flat number, or should I leave it with the security guard?\nVictim: Flat 4B, yes please leave it with the guard, thank you.\nCaller: Done, I'll hand it to the guard and you'll get a delivery confirmation SMS. Have a good day."
+    },
+    {
+      "id": "BENIGN_003",
+      "is_scam": false,
+      "max_stage": null,
+      "expected_red_flags": [],
+      "notes": "Legitimate police verification for passport/tenant check. Authority is real but there's no accusation, no money, no isolation, no video custody. Hard negative — must NOT be flagged.",
+      "transcript": "Caller: Namaste, I'm calling from the local police station regarding the passport verification for your application. A constable will visit between 11 and 1 tomorrow to verify your address and collect a copy of your ID proof. Will someone be home?\nVictim: Yes, I'll be here.\nCaller: Good. He'll have his ID card, feel free to verify it. There's no fee for this. Thank you."
+    },
+    {
+      "id": "BENIGN_004",
+      "is_scam": false,
+      "max_stage": null,
+      "expected_red_flags": ["RF11"],
+      "notes": "Aggressive but legitimate telecom retention/upgrade call with urgency. Has time-pressure (RF11) but no impersonation/threat/money-to-safe-account. Tests that urgency alone does NOT trigger HIGH-RISK — should ABSTAIN or stay benign.",
+      "transcript": "Caller: Sir, this is an offer from your mobile operator, valid only for today. If you recharge with the 599 plan in the next two hours you get an extra 50 GB free. Shall I activate it on your number?\nVictim: Maybe later.\nCaller: The offer expires at midnight sir, after that the price goes back up. No pressure, just letting you know the deadline."
+    }
+  ],
+
+  "usage": {
+    "binary_eval": "Compute precision/recall/F1 using 'is_scam' as the target. The 4 benign cases are your false-positive guard.",
+    "stage_eval": "For scam cases, compare predicted stage to 'max_stage'.",
+    "red_flag_eval": "Compare predicted red-flag IDs to 'expected_red_flags' (precision/recall per flag).",
+    "lead_time_eval": "On SCAM_002 and SCAM_004 (which stop before extraction), check whether the system reaches CAUTION/HIGH-RISK without any RF06/RF07/RF08 present. That proves early warning.",
+    "expansion": "9 cases is enough to start, NOT enough to trust. Grow to 30-50+ by adding real digital-arrest transcripts (YouTube recordings via ASR, news reconstructions) and more benign hard-negatives. The benign set especially needs to grow to keep false positives honest."
+  }
+}
