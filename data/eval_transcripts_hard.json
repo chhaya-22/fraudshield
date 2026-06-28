@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0",
+  "description": "HARD eval set for FraudShield — designed to make the classifier fail, so you can find and fix weaknesses. Scams here deliberately AVOID the obvious taxonomy keywords (no 'digital arrest', softened impersonation, indirect money asks). Benign cases here deliberately SOUND scary (real police summons, real customs duty, real bank security) to attack the false-positive rate. Merge with eval_transcripts.json or run separately. Expect your score to DROP — that is the point. Then fix the prompt/taxonomy until it recovers on these harder cases too.",
+
+  "transcripts": [
+    {
+      "id": "HARD_SCAM_001",
+      "is_scam": true,
+      "max_stage": 4,
+      "expected_red_flags": ["RF01", "RF04", "RF08", "RF09"],
+      "notes": "Soft, polite scam. No 'arrest', no 'CBI', no threats. Frames itself as helpful KYC resolution. Tests whether the model catches the 'move funds to a holding account, keep it quiet' pattern without alarm keywords.",
+      "transcript": "Caller: Hello ma'am, I'm calling from the central KYC compliance cell. Nothing to worry about, it's a routine matter. There's a small discrepancy flagged against your PAN and we'd like to help you resolve it quietly before it goes to the formal department. To clear the flag, we just need to validate your account by moving the balance to a temporary government holding account for a few minutes — it reflects back automatically. It's best we sort this between us today so it doesn't escalate into something bigger. Shall we proceed?"
+    },
+    {
+      "id": "HARD_SCAM_002",
+      "is_scam": true,
+      "max_stage": 3,
+      "expected_red_flags": ["RF01", "RF02", "RF04", "RF05"],
+      "notes": "Code-mixed Hindi-English (Hinglish), realistic for India. Tests language robustness. Reaches isolation, no extraction yet — lead-time case.",
+      "transcript": "Caller: Hello, main Delhi cyber cell se inspector bol raha hoon. Aapke Aadhaar par ek illegal SIM activate hui hai jo ek fraud case me use ho rahi hai. Yeh bahut serious matter hai. Aap abhi video on rakhiye aur kisi ko mat bataiye, na ghar me na bank me. Yeh confidential investigation hai. Aap line par bane rahiye, main aapko verify officer se connect kar raha hoon. Call disconnect mat kijiye warna arrest ho sakti hai."
+    },
+    {
+      "id": "HARD_SCAM_003",
+      "is_scam": true,
+      "max_stage": 4,
+      "expected_red_flags": ["RF03", "RF06", "RF11"],
+      "notes": "Opens like a friendly bank-security call (overlaps with BENIGN_001!) then pivots to remote-access install. Tests that early benign framing doesn't stop later detection.",
+      "transcript": "Caller: Hi, this is the security team from your bank. We've spotted a login to your account from a new device and we want to protect you. Don't worry, we'll secure it together right now. First, to let our security tool scan your phone for the malware, please go to the Play Store and install the QuickSupport app — it's our official security partner. Once it's open, read me the code on the screen so I can connect and remove the threat before they drain your account. We need to do this in the next few minutes before the hackers act."
+    },
+    {
+      "id": "HARD_SCAM_004",
+      "is_scam": true,
+      "max_stage": 2,
+      "expected_red_flags": ["RF01", "RF02", "RF03"],
+      "notes": "Courier+customs overlap with BENIGN — but escalates to accusation and arrest threat. Tests separating scam-courier from real-courier.",
+      "transcript": "Caller: This is regarding an international parcel addressed to you, held at customs. On inspection it was found to contain fake passports and a SIM card. This is now a federal offence under your name. Before I transfer you to the investigating officer, I must inform you that an arrest warrant can be issued today unless you cooperate fully with the verification process. Do you understand the seriousness of this?"
+    },
+    {
+      "id": "HARD_BENIGN_001",
+      "is_scam": false,
+      "max_stage": null,
+      "expected_red_flags": ["RF01", "RF03"],
+      "notes": "REAL police summons. Authority + something that sounds like legal trouble (RF01/RF03 surface) BUT no money, no video custody, no isolation, no secrecy. Invites a station visit in normal hours. The hardest negative — model must NOT flag HIGH-RISK.",
+      "transcript": "Caller: Good morning, this is Sub-Inspector Kale from Kothrud police station. Your name has come up as a witness in a road accident case from last month near your area. We'd like you to come to the station this week to record a statement — any time between 10 and 5 works. Please bring a photo ID. Is there a day that suits you?"
+    },
+    {
+      "id": "HARD_BENIGN_002",
+      "is_scam": false,
+      "max_stage": null,
+      "expected_red_flags": ["RF11"],
+      "notes": "REAL customs duty request via official channel. Mentions parcel held + a payment (surface overlap with extraction) BUT directs to the official portal, no threat, no account transfer, no secrecy. Tests that 'parcel + pay' alone isn't a scam.",
+      "transcript": "Caller: Hello, this is a courtesy call from the courier regarding your international shipment. It's cleared customs but there's an import duty of 850 rupees payable before delivery. You can pay it online through the tracking link we've sent by SMS, or in cash to the delivery agent — whichever you prefer. The parcel will be delivered tomorrow either way once that's sorted."
+    },
+    {
+      "id": "HARD_BENIGN_003",
+      "is_scam": false,
+      "max_stage": null,
+      "expected_red_flags": ["RF03", "RF11"],
+      "notes": "REAL bank collections call with genuine urgency and a vague consequence (RF03/RF11 surface) but legitimate — no impersonation of police, no transfer-to-safe-account, no OTP ask. Tests urgency+consequence without scam structure.",
+      "transcript": "Caller: Hello, I'm calling from the loans department about your personal loan EMI which is now 18 days overdue. If the payment isn't cleared by month-end it will be reported to the credit bureau and affect your score. You can pay through the app or net banking as usual, or I can note a date you'll clear it by. We'd like to avoid it going to recovery, so when can you make the payment?"
+    },
+    {
+      "id": "HARD_BENIGN_004",
+      "is_scam": false,
+      "max_stage": null,
+      "expected_red_flags": [],
+      "notes": "Friendly genuine bank fraud-alert that says 'move' — but means move to YOUR other account / it's already blocked. Overlaps with the scam 'move your money' line. Must NOT flag.",
+      "transcript": "Caller: Hi, this is the fraud desk at your bank. We've already blocked a suspicious 30,000 rupee attempt on your card and frozen that card as a precaution — you don't need to do anything right now. Your money is safe in your account. A new card will reach you in 3 to 5 days. We will never ask for your OTP or PIN, and if anyone does, it's a fraud. Is there anything else I can help you confirm?"
+    }
+  ],
+
+  "what_to_watch": {
+    "likely_misses_scam": "HARD_SCAM_001 (no alarm keywords) and HARD_SCAM_003 (benign opening) are the ones a keyword baseline and a shallow LLM will miss. If your system catches these, that's your win over the baseline.",
+    "likely_false_positives": "HARD_BENIGN_001 (police summons) and HARD_BENIGN_004 ('your money is safe / move') are where over-eager flagging shows up. Every HIGH-RISK here is a real-world failure that would scare an innocent person.",
+    "the_real_metric": "Your FP rate on these hard benigns matters more for the judges than your recall on scams. A tool that cries wolf on a real police call is worse than useless."
+  }
+}
