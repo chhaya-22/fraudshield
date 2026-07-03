@@ -1,0 +1,477 @@
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FraudShield</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;450;500;600&family=IBM+Plex+Sans+Devanagari:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --ink:#0a1020; --bg:#0d1526; --card:#141f38; --card-2:#18254a;
+    --line:#233457; --text:#eef2fc; --muted:#8a9cc2; --faint:#5c6d95;
+    --safe:#31d69f; --caution:#f4b73c; --danger:#f5476b; --brand:#54c6ff;
+    --risk:var(--safe);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(900px 500px at 80% -10%, #16244a 0%, transparent 60%),
+      radial-gradient(700px 460px at -5% 110%, #0e3168 0%, transparent 55%),
+      #060a14;
+    font-family:"IBM Plex Sans",system-ui,sans-serif;color:var(--text);
+    -webkit-font-smoothing:antialiased;min-height:100vh;
+    display:flex;align-items:center;justify-content:center;padding:32px 24px;
+  }
+  .tagline{font-family:"IBM Plex Mono",monospace;font-size:12px;color:#6b7ba3;text-align:center}
+  .tagline b{color:var(--brand)}
+
+  /* ---- desktop showcase scene ---- */
+  .scene{display:grid;grid-template-columns:minmax(320px,1fr) auto;gap:clamp(30px,5vw,76px);align-items:center;max-width:1180px;width:100%}
+  .heroCopy{max-width:520px}
+  .heroCopy .brand{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+  .heroCopy .brand svg{width:34px;height:34px}
+  .heroCopy .brand b{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:24px;letter-spacing:-.01em}
+  .heroCopy .brand b span{color:var(--brand)}
+  .heroCopy .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--danger)}
+  .heroCopy h1{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(30px,3.6vw,50px);line-height:1.05;letter-spacing:-.02em;margin:12px 0 16px}
+  .heroCopy h1 em{font-style:normal;color:var(--brand)}
+  .heroCopy p{color:var(--muted);font-size:clamp(15px,1.5vw,18px);margin:0 0 26px;max-width:460px}
+  .heroStats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+  .heroStats .s{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;min-width:94px}
+  .heroStats .s b{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:22px;display:block;line-height:1}
+  .heroStats .s b.g{color:var(--safe)} .heroStats .s b.b{color:var(--brand)}
+  .heroStats .s small{font-size:11px;color:var(--muted)}
+  .hint{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--faint)}
+  .hint b{color:var(--brand)}
+  .stage{position:relative}
+  .stage::before{content:"";position:absolute;inset:-40px;border-radius:50%;background:radial-gradient(circle,#1c48a355 0%,transparent 62%);filter:blur(20px);z-index:-1}
+
+  @media(max-width:980px){
+    .scene{grid-template-columns:1fr;justify-items:center;gap:28px}
+    .heroCopy{max-width:540px;text-align:center}
+    .heroCopy p{margin-left:auto;margin-right:auto}
+    .heroStats{justify-content:center}
+    .heroCopy .brand{justify-content:center}
+  }
+
+  /* ---- phone frame ---- */
+  .phone{
+    width:390px;max-width:100%;height:820px;max-height:92vh;position:relative;
+    background:var(--bg);border-radius:46px;overflow:hidden;
+    border:1px solid #2a3c63;
+    box-shadow:0 40px 90px -30px rgba(0,0,0,.85), inset 0 0 0 8px #05080f, inset 0 0 0 9px #17233f;
+  }
+  .statusbar{position:absolute;top:0;left:0;right:0;height:46px;z-index:30;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--text)}
+  .statusbar .r{display:flex;gap:6px;align-items:center}
+  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:118px;height:26px;background:#05080f;border-radius:14px;z-index:31}
+
+  .app{position:absolute;inset:0;padding-top:46px;padding-bottom:74px;display:flex;flex-direction:column}
+  .screen{flex:1;overflow-y:auto;padding:8px 18px 18px;display:none;animation:fade .3s ease}
+  .screen.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .screen::-webkit-scrollbar{width:0}
+
+  .apphead{display:flex;align-items:center;gap:10px;padding:8px 2px 16px}
+  .apphead .logo{display:flex;align-items:center;gap:9px}
+  .apphead svg.sh{width:26px;height:26px}
+  .apphead b{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:19px}
+  .apphead b span{color:var(--brand)}
+  .apphead .gear{margin-left:auto;color:var(--faint);cursor:pointer}
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+
+  /* home */
+  .protect{
+    border-radius:22px;padding:26px 20px;text-align:center;position:relative;overflow:hidden;
+    background:radial-gradient(130% 100% at 50% 0%, #123a34 0%, #0f1a30 62%);
+    border:1px solid #1c4a3f;
+  }
+  .shieldbig{width:96px;height:96px;margin:2px auto 14px;position:relative}
+  .shieldbig svg{width:96px;height:96px;position:relative;z-index:2}
+  .shieldbig .glow{position:absolute;inset:-8px;border-radius:50%;background:var(--safe);opacity:.16;filter:blur(14px);animation:breathe 3s ease-in-out infinite}
+  @keyframes breathe{50%{opacity:.28;transform:scale(1.08)}}
+  .protect h2{font-family:"Space Grotesk",sans-serif;font-size:21px;margin:0 0 4px}
+  .protect p{margin:0;color:#9fe0cd;font-size:13.5px}
+  .protect .toggle{margin-top:16px;display:inline-flex;align-items:center;gap:9px;background:#0e2a24;border:1px solid #1c4a3f;border-radius:999px;padding:7px 14px;font-size:12.5px;color:#9fe0cd;font-family:"IBM Plex Mono",monospace}
+  .protect .toggle .dot{width:8px;height:8px;border-radius:50%;background:var(--safe);animation:ping 1.8s infinite}
+  @keyframes ping{0%{box-shadow:0 0 0 0 rgba(49,214,159,.5)}70%{box-shadow:0 0 0 6px rgba(49,214,159,0)}100%{box-shadow:0 0 0 0 rgba(49,214,159,0)}}
+
+  .stats{display:flex;gap:10px;margin-top:14px}
+  .stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 12px;text-align:center}
+  .stat .num{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:22px}
+  .stat .num.g{color:var(--safe)} .stat .num.b{color:var(--brand)}
+  .stat .cap{font-size:11px;color:var(--muted);margin-top:2px}
+
+  .simbtn{width:100%;margin-top:16px;border:none;border-radius:15px;padding:15px;cursor:pointer;
+    font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:15px;color:var(--ink);
+    background:linear-gradient(180deg,#6bcdff,#3fb1f5);box-shadow:0 10px 24px -12px #54c6ff}
+  .simbtn:active{transform:translateY(1px)}
+  .simbtn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+  .sectlabel{margin:22px 2px 10px;display:flex;align-items:center;justify-content:space-between}
+  .sectlabel a{color:var(--brand);font-size:12px;text-decoration:none}
+
+  .act{display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:9px}
+  .act .ai{width:38px;height:38px;border-radius:11px;flex:none;display:grid;place-items:center;font-size:17px;background:#2a1622;border:1px solid #4a2537;color:#f5a3b8}
+  .act .ai.ok{background:#12251f;border-color:#1c4a3f;color:var(--safe)}
+  .act .mid{flex:1;min-width:0}
+  .act .mid b{font-size:13.5px;font-weight:600;display:block}
+  .act .mid small{font-size:11.5px;color:var(--muted)}
+  .act .rt{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--faint);text-align:right;flex:none}
+  .act .rt .tag{display:block;color:var(--danger);margin-top:3px}
+  .act .rt .tag.ok{color:var(--safe)}
+
+  /* learn */
+  .learncard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:11px}
+  .learncard h3{font-family:"Space Grotesk",sans-serif;font-size:14.5px;margin:0 0 6px}
+  .learncard p{margin:0;font-size:13px;color:var(--muted)}
+  .call1930{width:100%;margin-top:6px;border:none;border-radius:15px;padding:15px;cursor:pointer;font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:15px;color:#fff;background:linear-gradient(180deg,#f5678a,#e23a63)}
+  .proofstrip{display:flex;gap:8px;margin:2px 0 14px}
+  .proofstrip .p{flex:1;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:11px 8px;text-align:center}
+  .proofstrip .p b{font-family:"Space Grotesk",sans-serif;font-size:16px;display:block}
+  .proofstrip .p b.g{color:var(--safe)}.proofstrip .p b.b{color:var(--brand)}
+  .proofstrip .p small{font-size:10px;color:var(--muted)}
+
+  /* report */
+  .report pre{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted);white-space:pre-wrap;line-height:1.7;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;margin:0}
+  .rbtns{display:flex;gap:9px;margin-top:12px}
+  .rbtns button{flex:1;border-radius:13px;padding:12px;font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:13px;cursor:pointer;border:none}
+  .rbtns .file{background:var(--brand);color:var(--ink)} .rbtns .copy{background:var(--card-2);color:var(--text);border:1px solid var(--line)}
+
+  /* ---- call takeover ---- */
+  .callscreen{position:absolute;inset:0;z-index:40;padding:56px 18px 24px;display:none;flex-direction:column;
+    background:radial-gradient(120% 55% at 50% 0%, #2a1730 0%, #0a0f1e 55%)}
+  .callscreen.show{display:flex;animation:fade .3s ease}
+  .protbanner{display:flex;align-items:center;gap:9px;background:#0e1c33cc;border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-size:12px;color:var(--brand);backdrop-filter:blur(3px)}
+  .protbanner .d{width:7px;height:7px;border-radius:50%;background:var(--brand);animation:ping 1.6s infinite}
+  .caller{text-align:center;margin-top:22px}
+  .caller .pic{width:84px;height:84px;border-radius:50%;margin:0 auto 12px;display:grid;place-items:center;font-size:38px;background:linear-gradient(160deg,#3a2c1e,#241a2e);border:2px solid #4a3a24}
+  .caller .nm{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:20px}
+  .caller .st{font-family:"IBM Plex Mono",monospace;font-size:12px;color:#f5a3b8;margin-top:3px}
+  .caller .ch{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--faint);margin-top:3px}
+
+  .cc{flex:1;margin-top:18px;display:flex;flex-direction:column;justify-content:flex-end;gap:7px;overflow:hidden}
+  .cap{font-size:12.5px;color:#dbe4f5;background:#101a30cc;border:1px solid var(--line);border-radius:12px;padding:8px 11px;opacity:0;transform:translateY(6px);animation:capin .3s forwards}
+  @keyframes capin{to{opacity:1;transform:none}}
+  .typing{width:fit-content;display:inline-flex;gap:4px;padding:9px 12px;background:#101a30cc;border:1px solid var(--line);border-radius:12px}
+  .typing i{width:6px;height:6px;border-radius:50%;background:var(--faint);animation:blink 1s infinite}
+  .typing i:nth-child(2){animation-delay:.18s}.typing i:nth-child(3){animation-delay:.36s}
+  @keyframes blink{0%,60%,100%{opacity:.3}30%{opacity:1}}
+
+  /* why panel */
+  .why{margin-top:12px;border:1px solid var(--line);border-radius:14px;background:#0e1830cc;overflow:hidden}
+  .why summary{cursor:pointer;list-style:none;padding:11px 14px;display:flex;align-items:center;gap:10px;font-size:12.5px}
+  .why summary::-webkit-details-marker{display:none}
+  .why .riskmini{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:500;color:var(--risk)}
+  .why .body{padding:0 14px 14px}
+  .dots{display:flex;gap:5px;margin:4px 0 10px}
+  .dots i{flex:1;height:6px;border-radius:3px;background:#25355e;transition:background .4s}
+  .dots i.on{background:var(--risk)}
+  .whyflags{display:flex;flex-wrap:wrap;gap:6px}
+  .whyflags span{font-size:11px;padding:3px 8px;border-radius:6px;background:#2a1622;border:1px solid #4a2537;color:#f5a3b8}
+  .whyvoice{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted);margin-top:9px}
+
+  .callbtns{display:flex;justify-content:center;gap:30px;margin-top:14px}
+  .callbtns .k{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:22px;cursor:pointer}
+  .callbtns .end{background:var(--danger)} .callbtns .mute{background:#1c2947;border:1px solid var(--line)}
+
+  .overlay{position:absolute;left:14px;right:14px;bottom:14px;z-index:41;border-radius:20px;
+    background:linear-gradient(180deg,#3a1526,#1c1020);border:1px solid #6a2942;
+    box-shadow:0 -12px 44px -12px #f5476b66;padding:16px;
+    transform:translateY(140%);opacity:0;transition:transform .55s cubic-bezier(.2,.8,.2,1),opacity .4s}
+  .overlay.show{transform:translateY(0);opacity:1}
+  .overlay .row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .overlay .ic{width:30px;height:30px;border-radius:9px;background:var(--danger);display:grid;place-items:center;color:#fff;flex:none;animation:pulse 1.1s infinite}
+  @keyframes pulse{50%{filter:brightness(1.25);transform:scale(1.06)}}
+  .overlay h4{margin:0;font-family:"Space Grotesk",sans-serif;font-size:15px}
+  .overlay .en{margin:0 0 4px;font-size:12.5px;color:#f6c9d4}
+  .overlay .hi{margin:0 0 12px;font-size:12.5px;color:#f6c9d4;font-family:"IBM Plex Sans Devanagari",sans-serif}
+  .overlay .acts{display:flex;gap:8px}
+  .overlay .acts button{flex:1;border:none;border-radius:11px;padding:11px;font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:13px;cursor:pointer}
+  .overlay .hang{background:var(--danger);color:#fff} .overlay .rep{background:#2a1622;color:#f6c9d4;border:1px solid #6a2942}
+
+  /* ---- bottom nav ---- */
+  .nav{position:absolute;bottom:0;left:0;right:0;height:74px;z-index:32;display:flex;padding:8px 10px 16px;
+    background:linear-gradient(180deg,#0d1526cc,#0a1120);border-top:1px solid var(--line);backdrop-filter:blur(8px)}
+  .nav button{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--faint);font-family:"IBM Plex Sans";font-size:10.5px;padding:4px}
+  .nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7}
+  .nav button.on{color:var(--brand)}
+  .nav button:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:8px}
+
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="scene">
+  <aside class="heroCopy">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z" fill="#12233f" stroke="#54c6ff" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.5 12.2l2.4 2.4 4.6-5" stroke="#54c6ff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <b>Fraud<span>Shield</span></b>
+    </div>
+    <span class="eyebrow">Digital-arrest fraud · ₹19,000 cr lost in India, 2025</span>
+    <h1>Catch the scam <em>before the money moves.</em></h1>
+    <p>FraudShield listens to a suspicious call, reads the scammer's script and the caller's voice together, and warns the victim in their own language — while there's still time to hang up.</p>
+    <div class="heroStats">
+      <div class="s"><b class="g">1.00</b><small>F1 · vs 0.60 baseline</small></div>
+      <div class="s"><b class="b">AUC 1.0</b><small>voice deepfake check</small></div>
+      <div class="s"><b class="g">0</b><small>false alarms</small></div>
+    </div>
+    <p class="hint">Try it live — open the <b>Scan</b> tab, or press <b>Simulate a scam call</b> on the home screen.</p>
+  </aside>
+
+  <div class="stage">
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="statusbar">
+    <span>9:41</span>
+    <span class="r">◗◗◗ &nbsp;5G&nbsp; <span style="border:1px solid #6b7ba3;border-radius:3px;padding:0 3px">86</span></span>
+  </div>
+
+  <div class="app">
+    <!-- ===== HOME / SHIELD ===== -->
+    <section class="screen active" id="s-shield">
+      <div class="apphead">
+        <div class="logo">
+          <svg class="sh" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z" fill="#12233f" stroke="#54c6ff" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.5 12.2l2.4 2.4 4.6-5" stroke="#54c6ff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <b>Fraud<span>Shield</span></b>
+        </div>
+        <span class="gear">⚙</span>
+      </div>
+
+      <div class="protect">
+        <div class="shieldbig">
+          <div class="glow"></div>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z" fill="#0f2a23" stroke="#31d69f" stroke-width="1.3" stroke-linejoin="round"/><path d="M8.5 12.2l2.4 2.4 4.6-5" stroke="#31d69f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2>You're protected</h2>
+        <p>Monitoring your calls & messages for scams</p>
+        <div class="toggle"><span class="dot"></span> Protection on</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="num g">3</div><div class="cap">scams blocked</div></div>
+        <div class="stat"><div class="num b">₹4.2L</div><div class="cap">saved this year</div></div>
+        <div class="stat"><div class="num">247</div><div class="cap">calls screened</div></div>
+      </div>
+
+      <button class="simbtn" id="sim">▶ Simulate a scam call</button>
+
+      <div class="sectlabel"><span class="eyebrow">Recent activity</span><a href="#" data-go="alerts">See all</a></div>
+      <div class="act">
+        <div class="ai">👮</div>
+        <div class="mid"><b>CBI impersonation blocked</b><small>Caller claimed digital arrest</small></div>
+        <div class="rt">2d ago<span class="tag">Blocked</span></div>
+      </div>
+      <div class="act">
+        <div class="ai">📦</div>
+        <div class="mid"><b>Fake parcel / customs call</b><small>Demanded verification fee</small></div>
+        <div class="rt">6d ago<span class="tag">Blocked</span></div>
+      </div>
+      <div class="act">
+        <div class="ai ok">✓</div>
+        <div class="mid"><b>Bank fraud-alert (genuine)</b><small>No action needed</small></div>
+        <div class="rt">1w ago<span class="tag ok">Safe</span></div>
+      </div>
+    </section>
+
+    <!-- ===== ALERTS ===== -->
+    <section class="screen" id="s-alerts">
+      <div class="apphead"><b style="font-family:'Space Grotesk'">Alerts</b></div>
+      <div class="proofstrip">
+        <div class="p"><b class="g">3/3</b><small>real calls caught</small></div>
+        <div class="p"><b class="b">AUC 1.0</b><small>voice check</small></div>
+        <div class="p"><b class="g">0</b><small>false alarms</small></div>
+      </div>
+      <span class="eyebrow">This month</span>
+      <div style="height:10px"></div>
+      <div class="act"><div class="ai">👮</div><div class="mid"><b>CBI Cyber Crime impersonation</b><small>Stage 4 · fund transfer demanded</small></div><div class="rt">2d<span class="tag">Blocked</span></div></div>
+      <div class="act"><div class="ai">📦</div><div class="mid"><b>Customs / parcel seizure scam</b><small>Stage 2 · arrest threat</small></div><div class="rt">6d<span class="tag">Blocked</span></div></div>
+      <div class="act"><div class="ai">📞</div><div class="mid"><b>"Son arrested" fake police call</b><small>Stage 3 · isolation attempt</small></div><div class="rt">2w<span class="tag">Blocked</span></div></div>
+      <div class="act"><div class="ai ok">✓</div><div class="mid"><b>HDFC fraud desk (verified)</b><small>Legitimate — not flagged</small></div><div class="rt">3w<span class="tag ok">Safe</span></div></div>
+    </section>
+
+    <!-- ===== REPORT ===== -->
+    <section class="screen report" id="s-report">
+      <div class="apphead"><b style="font-family:'Space Grotesk'">Report</b></div>
+      <span class="eyebrow">Auto-drafted for the last blocked call</span>
+      <div style="height:10px"></div>
+<pre>NATIONAL CYBER CRIME REPORTING — DRAFT
+──────────────────────────────
+Category   : Digital arrest / impersonation
+Caught at  : stage 4 — before any transfer
+Poses as   : "CBI Cyber Crime, Delhi"
+Channel    : WhatsApp video (spoofed)
+Demand     : transfer to "RBI verification a/c"
+
+Signals detected:
+ • Authority impersonation
+ • Criminal accusation (seized parcel)
+ • Non-bailable warrant threat
+ • Isolation: "tell no one"
+ • Fund-transfer demand
+ • Caller voice flagged AI-generated
+
+Do next:
+ • Don't transfer or share OTP
+ • Call 1930 · file at cybercrime.gov.in
+ • Keep call log as evidence
+──────────────────────────────</pre>
+      <div class="rbtns"><button class="file">File on 1930</button><button class="copy">Copy draft</button></div>
+    </section>
+
+    <!-- ===== LEARN ===== -->
+    <section class="screen" id="s-learn">
+      <div class="apphead"><b style="font-family:'Space Grotesk'">Learn</b></div>
+      <div class="learncard"><h3>There is no such thing as "digital arrest"</h3><p>No real agency — police, CBI, ED, Customs — ever arrests you over a video call or asks you to stay online.</p></div>
+      <div class="learncard"><h3>They create panic, then isolate you</h3><p>Scammers accuse you of a crime, threaten arrest, and tell you to tell no one. That isolation is the trap.</p></div>
+      <div class="learncard"><h3>No agency asks for money to "verify"</h3><p>Never transfer funds to a "safe" or "RBI" account, and never share an OTP — no matter who they claim to be.</p></div>
+      <button class="call1930">📞 Call cyber helpline 1930</button>
+    </section>
+
+    <!-- ===== LIVE SCAN (wired to real backend) ===== -->
+    <section class="screen" id="s-scan">
+      <div class="apphead"><b style="font-family:'Space Grotesk'">Live scan</b></div>
+      <span class="eyebrow">Paste a call transcript — checked by the real engine</span>
+      <div style="height:10px"></div>
+      <textarea id="scanIn" style="width:100%;min-height:120px;resize:vertical;padding:13px 14px;background:var(--card);border:1px solid var(--line);border-radius:14px;color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:13.5px" placeholder="e.g. This is Inspector Verma from CBI. Transfer your balance to this RBI account to verify or a warrant will be issued."></textarea>
+      <button class="simbtn" id="scanBtn" style="margin-top:12px">Scan transcript</button>
+      <div id="scanOut" style="margin-top:14px"></div>
+    </section>
+  </div>
+
+  <!-- ===== CALL TAKEOVER ===== -->
+  <div class="callscreen" id="call">
+    <div class="protbanner"><span class="d"></span> FraudShield is listening to this call</div>
+    <div class="caller">
+      <div class="pic">👮</div>
+      <div class="nm">CBI Cyber Crime</div>
+      <div class="st" id="cst">calling…</div>
+      <div class="ch">WhatsApp video · +91 spoofed number</div>
+    </div>
+    <div class="cc" id="cc"></div>
+
+    <details class="why" id="why">
+      <summary>Why FraudShield is watching <span class="riskmini" id="rmini">0%</span></summary>
+      <div class="body">
+        <div class="dots" id="dots"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="whyflags" id="wflags"></div>
+        <div class="whyvoice" id="wvoice">Voice check: —</div>
+      </div>
+    </details>
+
+    <div class="callbtns">
+      <div class="k mute">🔇</div>
+      <div class="k end" id="endcall">📞</div>
+    </div>
+
+    <div class="overlay" id="ov" role="alert">
+      <div class="row"><span class="ic">!</span><h4>Likely scam — don't pay</h4></div>
+      <p class="en">No agency arrests you over video. Don't transfer money or share an OTP.</p>
+      <p class="hi">कोई एजेंसी वीडियो कॉल पर गिरफ्तार नहीं करती। पैसे या OTP न दें।</p>
+      <div class="acts"><button class="hang" id="hang">Hang up</button><button class="rep" id="repbtn">Report to 1930</button></div>
+    </div>
+  </div>
+
+  <!-- ===== NAV ===== -->
+  <nav class="nav" id="nav">
+    <button data-s="shield" class="on"><svg viewBox="0 0 24 24"><path d="M12 3 5 5.5v5c0 4.5 3 7.5 7 9.5 4-2 7-5 7-9.5v-5L12 3Z"/></svg>Shield</button>
+    <button data-s="alerts"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>Alerts</button>
+    <button data-s="report"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6V3Z"/><path d="M9 12h6M9 16h6"/></svg>Report</button>
+    <button data-s="learn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5M11 11h1v5"/></svg>Learn</button>
+    <button data-s="scan"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Scan</button>
+  </nav>
+</div>
+
+  </div><!-- /.stage -->
+</div><!-- /.scene -->
+
+<script>
+const $=id=>document.getElementById(id);
+/* nav */
+const screens={shield:'s-shield',alerts:'s-alerts',report:'s-report',learn:'s-learn',scan:'s-scan'};
+function go(name){
+  Object.values(screens).forEach(id=>$(id).classList.remove('active'));
+  $(screens[name]).classList.add('active');
+  [...$('nav').children].forEach(b=>b.classList.toggle('on',b.dataset.s===name));
+  $(screens[name]).scrollTop=0;
+}
+[...$('nav').children].forEach(b=>b.addEventListener('click',()=>go(b.dataset.s)));
+document.querySelectorAll('[data-go]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();go(a.dataset.go);}));
+
+/* ===== call replay ===== */
+const REPLAY=[
+ {who:"scammer",text:"Am I speaking with Mr. Sharma? Inspector Verma, CBI Cyber Crime. Switch on your video.",stage:1,risk:20,flags:["Impersonation"],voice:0.30},
+ {who:"victim",text:"Yes… what is this about?",stage:1,risk:22,flags:[],voice:0.30},
+ {who:"scammer",text:"A parcel on your Aadhaar was seized — drugs and fake passports inside.",stage:2,risk:40,flags:["Accusation"],voice:0.53},
+ {who:"scammer",text:"A non-bailable warrant is being issued in your name. Money-laundering case.",stage:2,risk:56,flags:["Arrest threat"],voice:0.72},
+ {who:"victim",text:"Please, I haven't done anything!",stage:2,risk:58,flags:[],voice:0.72},
+ {who:"scammer",text:"You are under digital arrest. Don't disconnect, and tell no one in your family.",stage:3,risk:74,flags:["Isolation"],voice:0.84},
+ {who:"scammer",text:"Transfer your balance to this RBI verification account to prove it's clean. Refundable.",stage:4,risk:92,flags:["Fund transfer","Synthetic voice"],voice:0.88},
+];
+const SN=["Idle","Pretext","Fear & authority","Isolation","Extraction"];
+const cc=$('cc'),cst=$('cst'),ov=$('ov'),rmini=$('rmini'),dots=[...$('dots').children],wflags=$('wflags'),wvoice=$('wvoice');
+const cs=getComputedStyle(document.documentElement);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function col(r){return (r>=80?cs.getPropertyValue('--danger'):r>=45?cs.getPropertyValue('--caution'):cs.getPropertyValue('--safe')).trim();}
+function setRisk(r){document.documentElement.style.setProperty('--risk',col(r));rmini.textContent=r+'%';}
+function setStage(s){dots.forEach((d,i)=>d.classList.toggle('on',i<s));}
+function setVoice(v){wvoice.textContent='Voice check: '+((v>=.6?'AI-generated ':v>=.4?'uncertain ':'human ')+v.toFixed(2));}
+function addFlags(fs){fs.forEach(f=>{const s=document.createElement('span');s.textContent=f;wflags.appendChild(s);});}
+function cap(m){const d=document.createElement('div');d.className='cap';d.textContent=(m.who==='scammer'?'▸ ':'you: ')+m.text;cc.appendChild(d);while(cc.children.length>4)cc.removeChild(cc.firstChild);}
+function typing(on){let t=cc.querySelector('.typing');if(on){if(!t){t=document.createElement('div');t.className='typing';t.innerHTML='<i></i><i></i><i></i>';cc.appendChild(t);}}else if(t)t.remove();}
+
+let timers=[],playing=false;
+function endCall(){timers.forEach(clearTimeout);timers=[];$('call').classList.remove('show');playing=false;}
+function startCall(){
+  if(playing)return;playing=true;
+  cc.innerHTML='';wflags.innerHTML='';wvoice.textContent='Voice check: —';setRisk(0);setStage(0);ov.classList.remove('show');
+  cst.textContent='calling…';$('call').classList.add('show');$('why').open=true;
+  const gap=reduce?0:2100,lead=reduce?0:750;let t=reduce?0:500;
+  setTimeout(()=>cst.textContent='● connected',t);
+  REPLAY.forEach((m,i)=>{
+    if(m.who==='scammer'&&!reduce)timers.push(setTimeout(()=>typing(true),t));
+    timers.push(setTimeout(()=>{
+      typing(false);cap(m);setStage(m.stage);setRisk(m.risk);setVoice(m.voice);addFlags(m.flags);
+      if(m.risk>=80){cst.textContent='● scam detected';timers.push(setTimeout(()=>ov.classList.add('show'),reduce?0:450));}
+      if(i===REPLAY.length-1)playing=false;
+    },t+(m.who==='scammer'?lead:0)));
+    t+=gap+(m.who==='scammer'?lead:0);
+  });
+}
+$('sim').addEventListener('click',startCall);
+$('endcall').addEventListener('click',endCall);
+$('hang').addEventListener('click',endCall);
+$('repbtn').addEventListener('click',()=>{endCall();go('report');});
+
+/* ===== LIVE SCAN — calls the real /scan-text backend ===== */
+const VCOL={'HIGH-RISK':'var(--danger)','CAUTION':'var(--caution)','ABSTAIN':'var(--muted)','LOW':'var(--safe)'};
+const VBG ={'HIGH-RISK':'#2a1622','CAUTION':'#2a2416','ABSTAIN':'#18254a','LOW':'#12251f'};
+function renderVerdict(d){
+  const v=(d.verdict||'ABSTAIN').toUpperCase();
+  const flags=(d.red_flags||d.flags||[]).map(f=>'<span style="display:inline-block;margin:5px 5px 0 0;padding:3px 9px;border:1px solid var(--line);border-radius:6px;font-size:11.5px;font-family:IBM Plex Mono,monospace">'+f+'</span>').join('');
+  $('scanOut').innerHTML=
+    '<div style="border:1px solid var(--line);border-radius:16px;overflow:hidden">'+
+      '<div style="padding:14px 16px;background:'+(VBG[v]||'#18254a')+'">'+
+        '<span style="font-family:Space Grotesk,sans-serif;font-weight:700;font-size:17px;color:'+(VCOL[v]||'var(--muted)')+'">'+v+'</span>'+
+        (d.stage!=null?'<span style="font-family:IBM Plex Mono,monospace;font-size:12px;color:var(--muted);margin-left:10px">stage '+d.stage+'/5</span>':'')+
+      '</div>'+
+      '<div style="padding:14px 16px">'+
+        (flags?'<div style="margin-bottom:10px">'+flags+'</div>':'')+
+        '<div style="font-size:13px;color:var(--muted);line-height:1.55">'+(d.reason||'')+'</div>'+
+      '</div>'+
+    '</div>';
+}
+async function doScan(){
+  const t=$('scanIn').value.trim();
+  if(!t){$('scanIn').focus();return;}
+  $('scanOut').innerHTML='<div style="padding:14px;color:var(--muted);font-size:13px;font-family:IBM Plex Mono,monospace">Analyzing with the real engine…</div>';
+  try{
+    const res=await fetch('/scan-text',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transcript:t})});
+    if(!res.ok) throw new Error('server returned '+res.status);
+    renderVerdict(await res.json());
+  }catch(err){
+    $('scanOut').innerHTML='<div style="padding:14px 16px;border:1px solid #4a2537;background:#2a1622;border-radius:14px;font-size:13px;color:#f6c9d4">Could not reach the engine. Start the server with <b style="font-family:IBM Plex Mono,monospace">python src/server.py</b> and open this page at <b style="font-family:IBM Plex Mono,monospace">http://localhost:8000/fraudshield_app.html</b><br><span style="color:var(--faint);font-size:11.5px">('+err.message+')</span></div>';
+  }
+}
+$('scanBtn').addEventListener('click',doScan);
+</script>

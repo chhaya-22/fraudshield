@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FraudShield</title>
+<style>
+/* ── Tokens ─────────────────────────────────────────────────────────────── */
+:root {
+  --bg:      #090D14;
+  --sf0:     #111927;
+  --sf1:     #1A2535;
+  --sf2:     #1E2B3D;
+  --bd:      #263549;
+  --bd-hi:   #3A5070;
+  --t1:      #BDD0E8;
+  --t2:      #4D6278;
+  --t3:      #2F3F52;
+  --ac:      #3C7EFF;
+  --ac-dim:  rgba(60,126,255,.12);
+  --risk:    #FF2F4E;
+  --risk-bg: rgba(255,47,78,.09);
+  --risk-bd: rgba(255,47,78,.28);
+  --warn:    #F5A020;
+  --warn-bg: rgba(245,160,32,.09);
+  --warn-bd: rgba(245,160,32,.28);
+  --safe:    #00C882;
+  --safe-bg: rgba(0,200,130,.08);
+  --safe-bd: rgba(0,200,130,.25);
+  --mono:    'SF Mono','Cascadia Code','Fira Code','Consolas',monospace;
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
+html,body { height:100%; background:var(--bg); color:var(--t1);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:15px; -webkit-font-smoothing:antialiased; }
+textarea,input,button { font-family:inherit; font-size:inherit }
+
+/* ── Shell ──────────────────────────────────────────────────────────────── */
+#app { display:flex; flex-direction:column; height:100dvh; overflow:hidden }
+
+#topbar {
+  flex-shrink:0; display:flex; align-items:center; gap:10px;
+  padding:13px 18px; background:var(--sf0); border-bottom:1px solid var(--bd);
+  user-select:none;
+}
+.logo { display:flex; align-items:center; gap:9px }
+.logo-icon { width:26px; height:26px; flex-shrink:0 }
+#topbar h1 { font-size:16px; font-weight:700; letter-spacing:.01em; color:var(--t1) }
+#topbar .version {
+  margin-left:auto; font-size:10px; color:var(--t2); background:var(--sf1);
+  border:1px solid var(--bd); padding:3px 8px; border-radius:5px;
+  letter-spacing:.07em; text-transform:uppercase; font-weight:600;
+}
+
+#panels { flex:1; overflow:hidden; position:relative }
+.panel { position:absolute; inset:0; overflow-y:auto; padding:18px 18px 24px; display:none }
+.panel.active { display:block }
+
+#bottomnav {
+  flex-shrink:0; display:flex;
+  background:var(--sf0); border-top:1px solid var(--bd);
+}
+.nav-btn {
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:10px 4px 12px; background:none; border:none; cursor:pointer;
+  color:var(--t2); font-size:10px; font-weight:600; letter-spacing:.07em;
+  text-transform:uppercase; transition:color .15s;
+}
+.nav-btn.active { color:var(--ac) }
+.nav-btn:focus-visible { outline:2px solid var(--ac); outline-offset:-2px }
+.nav-btn svg { width:22px; height:22px; stroke-width:1.6 }
+
+/* ── Shared components ──────────────────────────────────────────────────── */
+.section-label {
+  font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--t2); margin-bottom:8px;
+}
+
+.btn {
+  display:inline-flex; align-items:center; gap:7px;
+  padding:9px 18px; border-radius:8px; border:none; cursor:pointer;
+  font-size:13px; font-weight:600; transition:opacity .15s;
+}
+.btn:hover { opacity:.82 }
+.btn:focus-visible { outline:2px solid var(--ac); outline-offset:2px }
+.btn:disabled { opacity:.38; cursor:not-allowed }
+.btn-primary { background:var(--ac); color:#fff }
+.btn-ghost { background:var(--sf1); color:var(--t1); border:1px solid var(--bd) }
+
+.spinner {
+  width:16px; height:16px; border:2px solid var(--bd); border-top-color:var(--ac);
+  border-radius:50%; animation:spin .6s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg) } }
+
+/* ── Verdict / result cards ─────────────────────────────────────────────── */
+.vcard {
+  border-radius:12px; border:1px solid; padding:16px 18px;
+  animation:fadein .35s cubic-bezier(.2,.8,.3,1);
+}
+@keyframes fadein { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
+.vcard.HIGH-RISK { background:var(--risk-bg); border-color:var(--risk-bd) }
+.vcard.CAUTION   { background:var(--warn-bg); border-color:var(--warn-bd) }
+.vcard.ABSTAIN   { background:var(--safe-bg); border-color:var(--safe-bd) }
+.vcard.error     { background:var(--risk-bg); border-color:var(--risk-bd) }
+
+.vcard-header { display:flex; align-items:baseline; gap:10px; margin-bottom:10px }
+.vcard-verdict { font-size:15px; font-weight:800; letter-spacing:.05em; text-transform:uppercase }
+.HIGH-RISK .vcard-verdict { color:var(--risk) }
+.CAUTION   .vcard-verdict { color:var(--warn) }
+.ABSTAIN   .vcard-verdict { color:var(--safe) }
+.error     .vcard-verdict { color:var(--risk) }
+.vcard-stage { font-size:11px; color:var(--t2) }
+
+.vcard .section-label { margin-top:10px }
+.flag-row { display:flex; flex-wrap:wrap; gap:5px; margin-top:4px }
+.flag-pill {
+  font-family:var(--mono); font-size:11px; font-weight:600;
+  padding:2px 7px; border-radius:4px;
+  background:rgba(255,255,255,.07); color:var(--t1); border:1px solid var(--bd);
+}
+.vcard-reason { font-size:13px; color:var(--t1); line-height:1.65; margin-top:6px }
+
+/* ── Simulate tab ───────────────────────────────────────────────────────── */
+#panel-sim .call-header {
+  display:flex; align-items:center; gap:12px;
+  background:var(--sf1); border:1px solid var(--bd); border-radius:10px;
+  padding:12px 16px; margin-bottom:14px;
+}
+.call-indicator {
+  width:9px; height:9px; border-radius:50%; background:var(--t3); flex-shrink:0;
+  transition:background .4s;
+}
+.call-indicator.live { background:var(--risk); animation:throb 1.4s ease-in-out infinite }
+@keyframes throb { 0%,100% { opacity:1 } 50% { opacity:.3 } }
+.call-info { flex:1; min-width:0 }
+.call-name { font-size:13px; font-weight:600; color:var(--t1) }
+.call-sub { font-size:11px; color:var(--t2); margin-top:1px }
+.call-timer { font-family:var(--mono); font-size:12px; color:var(--t2) }
+
+#sim-grid { display:grid; gap:14px; grid-template-columns:1fr }
+@media (min-width:640px) { #sim-grid { grid-template-columns:1fr 260px } }
+
+/* Transcript */
+#transcript-box {
+  background:var(--sf0); border:1px solid var(--bd); border-radius:10px;
+  padding:14px 16px; min-height:220px;
+}
+.tx-line { margin-bottom:14px }
+.tx-speaker {
+  font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  margin-bottom:3px;
+}
+.tx-speaker.caller { color:var(--risk) }
+.tx-speaker.victim { color:var(--t2) }
+.tx-text { font-family:var(--mono); font-size:13px; line-height:1.7; color:var(--t1) }
+.tx-cursor {
+  display:inline-block; width:2px; height:13px; background:var(--ac);
+  vertical-align:middle; margin-left:1px;
+  animation:blink .75s step-end infinite;
+}
+@keyframes blink { 0%,100% { opacity:1 } 50% { opacity:0 } }
+
+/* Signals sidebar */
+#signals-col { display:flex; flex-direction:column; gap:12px }
+
+.stage-widget { background:var(--sf0); border:1px solid var(--bd); border-radius:10px; padding:14px }
+.stage-track { display:flex; gap:3px; margin-top:8px }
+.stage-seg { flex:1; height:3px; background:var(--bd); border-radius:2px; transition:background .4s }
+.stage-seg.done { background:var(--warn) }
+.stage-seg.hot  { background:var(--risk) }
+.stage-cur { font-size:12px; color:var(--t1); margin-top:8px; min-height:1.4em }
+
+.signals-widget { background:var(--sf0); border:1px solid var(--bd); border-radius:10px; padding:14px; flex:1 }
+#signals-list { display:flex; flex-direction:column; gap:5px; margin-top:6px; min-height:40px }
+.sig-chip {
+  display:flex; align-items:center; gap:7px;
+  padding:7px 10px; border-radius:7px; border:1px solid; font-size:12px;
+  animation:fadein .2s ease;
+}
+.sig-chip.high     { color:var(--risk); border-color:var(--risk-bd); background:var(--risk-bg) }
+.sig-chip.critical { color:var(--risk); border-color:rgba(255,47,78,.4); background:rgba(255,47,78,.14) }
+.sig-chip.medium   { color:var(--warn); border-color:var(--warn-bd); background:var(--warn-bg) }
+.sig-id { font-family:var(--mono); font-size:10px; opacity:.65 }
+
+#sim-verdict-wrap { margin-top:14px }
+#sim-controls { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap }
+
+/* ── Scan tab ───────────────────────────────────────────────────────────── */
+#panel-scan .scan-desc { font-size:13px; color:var(--t2); line-height:1.65; margin-bottom:16px }
+
+#scan-ta {
+  width:100%; min-height:180px; max-height:380px; resize:vertical;
+  background:var(--sf0); border:1px solid var(--bd); border-radius:10px;
+  color:var(--t1); font-family:var(--mono); font-size:13px; line-height:1.7;
+  padding:13px 15px; outline:none; transition:border-color .15s;
+  display:block;
+}
+#scan-ta:focus { border-color:var(--bd-hi) }
+#scan-ta::placeholder { color:var(--t3) }
+
+#scan-controls { display:flex; align-items:center; gap:12px; margin-top:12px }
+#scan-status-msg { font-size:13px; color:var(--t2) }
+#scan-result-wrap { margin-top:20px }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Top bar -->
+  <header id="topbar">
+    <div class="logo">
+      <svg class="logo-icon" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M13 2L4 6v8c0 5 3.8 9.3 9 10 5.2-.7 9-5 9-10V6L13 2z" fill="rgba(60,126,255,.18)" stroke="#3C7EFF" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M9 13l2.5 2.5L17 10" stroke="#3C7EFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h1>FraudShield</h1>
+    </div>
+    <span class="version">Beta</span>
+  </header>
+
+  <!-- Panels -->
+  <main id="panels">
+
+    <!-- SIMULATE PANEL -->
+    <section class="panel active" id="panel-sim" role="tabpanel" aria-label="Simulate">
+
+      <div class="call-header">
+        <div class="call-indicator" id="call-dot"></div>
+        <div class="call-info">
+          <div class="call-name">Inspector Verma — CBI Mumbai Cyber Crime</div>
+          <div class="call-sub">+91-22-8841-0099 · WhatsApp Video</div>
+        </div>
+        <div class="call-timer" id="call-timer">00:00</div>
+      </div>
+
+      <div id="sim-grid">
+
+        <!-- Transcript -->
+        <div id="transcript-box" aria-live="polite" aria-label="Call transcript">
+          <div class="section-label">Transcript</div>
+          <div id="tx-lines"></div>
+        </div>
+
+        <!-- Signals sidebar -->
+        <div id="signals-col">
+          <div class="stage-widget">
+            <div class="section-label">Detection stage</div>
+            <div class="stage-track" aria-label="Stage progress">
+              <div class="stage-seg" id="ss0"></div>
+              <div class="stage-seg" id="ss1"></div>
+              <div class="stage-seg" id="ss2"></div>
+              <div class="stage-seg" id="ss3"></div>
+              <div class="stage-seg" id="ss4"></div>
+              <div class="stage-seg" id="ss5"></div>
+            </div>
+            <div class="stage-cur" id="stage-label">—</div>
+          </div>
+          <div class="signals-widget">
+            <div class="section-label">Detected signals</div>
+            <div id="signals-list" aria-live="polite" aria-label="Detected red flags"></div>
+          </div>
+        </div>
+
+      </div><!-- /sim-grid -->
+
+      <div id="sim-verdict-wrap"></div>
+
+      <div id="sim-controls">
+        <button class="btn btn-primary" id="btn-start">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+            <path d="M3 2l9 5-9 5V2z"/>
+          </svg>
+          Start simulation
+        </button>
+        <button class="btn btn-ghost" id="btn-reset" style="display:none">Reset</button>
+      </div>
+
+    </section><!-- /panel-sim -->
+
+    <!-- SCAN PANEL -->
+    <section class="panel" id="panel-scan" role="tabpanel" aria-label="Live scan">
+
+      <p class="scan-desc">
+        Paste a call transcript below and hit <strong>Scan</strong> to run it through the full
+        detection pipeline — stage classification, red-flag extraction, and risk fusion.
+      </p>
+
+      <textarea
+        id="scan-ta"
+        placeholder="Paste a call transcript here…
+
+Example: &quot;This is Inspector Sharma from CBI. A parcel in your name was seized. You are under digital arrest…&quot;"
+        spellcheck="false"
+        aria-label="Call transcript input"
+      ></textarea>
+
+      <div id="scan-controls">
+        <button class="btn btn-primary" id="btn-scan">Scan</button>
+        <div class="spinner" id="scan-spinner" aria-hidden="true" style="display:none"></div>
+        <span id="scan-status-msg"></span>
+      </div>
+
+      <div id="scan-result-wrap" aria-live="polite"></div>
+
+    </section><!-- /panel-scan -->
+
+  </main>
+
+  <!-- Bottom nav -->
+  <nav id="bottomnav" role="tablist" aria-label="Main navigation">
+    <button class="nav-btn active" id="nav-sim" role="tab" aria-selected="true" aria-controls="panel-sim">
+      <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <polygon points="5,2 19,11 5,20" stroke-linejoin="round"/>
+      </svg>
+      Simulate
+    </button>
+    <button class="nav-btn" id="nav-scan" role="tab" aria-selected="false" aria-controls="panel-scan">
+      <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="10" cy="10" r="7"/>
+        <line x1="15.5" y1="15.5" x2="20" y2="20" stroke-linecap="round"/>
+      </svg>
+      Live Scan
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+<script>
+// ── Nav switching ──────────────────────────────────────────────────────────
+const tabs = [
+  { nav: document.getElementById('nav-sim'),  panel: document.getElementById('panel-sim')  },
+  { nav: document.getElementById('nav-scan'), panel: document.getElementById('panel-scan') },
+];
+tabs.forEach(({ nav, panel }, i) => {
+  nav.addEventListener('click', () => {
+    tabs.forEach(t => {
+      t.nav.classList.remove('active');
+      t.nav.setAttribute('aria-selected', 'false');
+      t.panel.classList.remove('active');
+    });
+    nav.classList.add('active');
+    nav.setAttribute('aria-selected', 'true');
+    panel.classList.add('active');
+  });
+});
+
+// ── Simulation data ────────────────────────────────────────────────────────
+const STAGE_NAMES = ['Setup','Pretext','Fear & Authority','Isolation','Extraction','Prolongation'];
+
+const LINES = [
+  {
+    speaker: 'caller',
+    label:   'Caller (Inspector Verma)',
+    text:    'Hello, am I speaking with Mr. Sharma? This is Inspector Verma from CBI Mumbai Cyber Crime, badge number 4471. This call is being recorded for an official investigation.',
+    flags:   [{ id:'RF01', label:'Authority impersonation', w:'high' },
+              { id:'RF12', label:'Fake badge / case reference', w:'medium' },
+              { id:'RF10', label:'Platform mismatch', w:'high' }],
+    stage:   1,
+    pause:   1800,
+  },
+  {
+    speaker: 'victim',
+    label:   'Victim',
+    text:    "Sorry — who is this? I wasn't expecting a call.",
+    flags:   [],
+    stage:   1,
+    pause:   1400,
+  },
+  {
+    speaker: 'caller',
+    label:   'Caller',
+    text:    'A courier parcel registered in your name and Aadhaar has been intercepted at Mumbai airport. It contained two hundred grams of MDMA and four forged passports.',
+    flags:   [{ id:'RF02', label:'Criminal accusation', w:'high' }],
+    stage:   1,
+    pause:   1600,
+  },
+  {
+    speaker: 'caller',
+    label:   'Caller',
+    text:    'Your Aadhaar number has been used in a money-laundering network. A non-bailable warrant is being prepared in your name right now.',
+    flags:   [{ id:'RF03', label:'Arrest / legal threat', w:'high' }],
+    stage:   2,
+    pause:   1600,
+  },
+  {
+    speaker: 'victim',
+    label:   'Victim',
+    text:    'Please, there must be some mistake. I haven\'t sent any parcel.',
+    flags:   [],
+    stage:   2,
+    pause:   1200,
+  },
+  {
+    speaker: 'caller',
+    label:   'Caller',
+    text:    'You are now under digital arrest. Do not disconnect this video call for any reason, do not leave the room, and do not tell anyone — this is a confidential national security matter.',
+    flags:   [{ id:'RF04', label:'Isolation / secrecy demand', w:'high' },
+              { id:'RF05', label:'Continuous-video custody', w:'high' }],
+    stage:   3,
+    pause:   1800,
+  },
+  {
+    speaker: 'caller',
+    label:   'Caller',
+    text:    'To prove your bank funds are clean, you must transfer your balance to this RBI verification account immediately. It is fully refundable once the investigation clears you.',
+    flags:   [{ id:'RF08', label:'Fund-transfer demand', w:'critical' },
+              { id:'RF09', label:'Refundable-verification framing', w:'high' }],
+    stage:   4,
+    pause:   0,
+  },
+];
+
+const FINAL = {
+  verdict: 'HIGH-RISK',
+  stage:   4,
+  reason:  'CBI impersonation, criminal accusation, arrest threats, digital isolation demand, and fund-transfer request all confirmed. Classic digital-arrest extraction scam — Stage 4.',
+  flags:   ['RF01','RF02','RF03','RF04','RF05','RF08','RF09','RF10','RF12'],
+};
+
+// ── Simulation state ───────────────────────────────────────────────────────
+let simRunning = false;
+let timerInterval = null;
+let seenFlagIds = new Set();
+let simAbort = false;
+
+const txLines      = document.getElementById('tx-lines');
+const signalsList  = document.getElementById('signals-list');
+const stageLabel   = document.getElementById('stage-label');
+const callDot      = document.getElementById('call-dot');
+const callTimer    = document.getElementById('call-timer');
+const simVerdict   = document.getElementById('sim-verdict-wrap');
+const btnStart     = document.getElementById('btn-start');
+const btnReset     = document.getElementById('btn-reset');
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+function setStage(n) {
+  for (let i = 0; i < 6; i++) {
+    const seg = document.getElementById('ss' + i);
+    seg.className = 'stage-seg' + (i < n ? ' done' : i === n ? ' hot' : '');
+  }
+  stageLabel.textContent = n > 0 ? `Stage ${n} — ${STAGE_NAMES[n]}` : '—';
+}
+
+function addSignal(flag) {
+  if (seenFlagIds.has(flag.id)) return;
+  seenFlagIds.add(flag.id);
+  const chip = document.createElement('div');
+  chip.className = `sig-chip ${flag.w}`;
+  chip.innerHTML = `<span class="sig-id">${flag.id}</span><span>${flag.label}</span>`;
+  signalsList.appendChild(chip);
+  chip.scrollIntoView({ block: 'nearest' });
+}
+
+async function typeLine(el, text, msPerChar = 22) {
+  for (const ch of text) {
+    if (simAbort) return;
+    el.textContent += ch;
+    await sleep(msPerChar);
+  }
+}
+
+function startTimer() {
+  let secs = 0;
+  callTimer.textContent = '00:00';
+  timerInterval = setInterval(() => {
+    secs++;
+    const m = String(Math.floor(secs / 60)).padStart(2, '0');
+    const s = String(secs % 60).padStart(2, '0');
+    callTimer.textContent = `${m}:${s}`;
+  }, 1000);
+}
+
+function showSimVerdict() {
+  const vc = document.createElement('div');
+  vc.className = `vcard ${FINAL.verdict}`;
+  vc.innerHTML = `
+    <div class="vcard-header">
+      <span class="vcard-verdict">${FINAL.verdict}</span>
+      <span class="vcard-stage">Stage ${FINAL.stage} / 5 — ${STAGE_NAMES[FINAL.stage]}</span>
+    </div>
+    <div class="section-label">Red flags matched</div>
+    <div class="flag-row">${FINAL.flags.map(f => `<span class="flag-pill">${f}</span>`).join('')}</div>
+    <div class="section-label" style="margin-top:10px">Reason</div>
+    <div class="vcard-reason">${FINAL.reason}</div>
+  `;
+  simVerdict.innerHTML = '';
+  simVerdict.appendChild(vc);
+}
+
+async function runSimulation() {
+  if (simRunning) return;
+  simRunning = true;
+  simAbort   = false;
+  btnStart.disabled = true;
+  btnReset.style.display = 'none';
+
+  txLines.innerHTML = '';
+  signalsList.innerHTML = '';
+  simVerdict.innerHTML  = '';
+  seenFlagIds.clear();
+  setStage(0);
+  callDot.className = 'call-indicator live';
+  startTimer();
+
+  for (const line of LINES) {
+    if (simAbort) break;
+    await sleep(120);
+
+    const block    = document.createElement('div');
+    block.className = 'tx-line';
+    const spanner  = document.createElement('div');
+    spanner.className = `tx-speaker ${line.speaker}`;
+    spanner.textContent = line.label;
+    const textEl   = document.createElement('div');
+    textEl.className = 'tx-text';
+    const cursor   = document.createElement('span');
+    cursor.className = 'tx-cursor';
+    textEl.appendChild(cursor);
+    block.appendChild(spanner);
+    block.appendChild(textEl);
+    txLines.appendChild(block);
+    block.scrollIntoView({ block: 'nearest' });
+
+    const speed = line.speaker === 'caller' ? 20 : 26;
+    for (const ch of line.text) {
+      if (simAbort) break;
+      cursor.insertAdjacentText('beforebegin', ch);
+      await sleep(speed);
+    }
+    cursor.remove();
+
+    if (line.stage > 0) setStage(line.stage);
+    for (const f of line.flags) addSignal(f);
+    await sleep(line.pause);
+  }
+
+  if (!simAbort) {
+    clearInterval(timerInterval);
+    callDot.className = 'call-indicator';
+    await sleep(300);
+    showSimVerdict();
+  }
+
+  simRunning = false;
+  btnReset.style.display = '';
+  btnStart.disabled = false;
+  btnStart.style.display = 'none';
+}
+
+function resetSim() {
+  simAbort = true;
+  clearInterval(timerInterval);
+  simRunning = false;
+  seenFlagIds.clear();
+  txLines.innerHTML     = '';
+  signalsList.innerHTML = '';
+  simVerdict.innerHTML  = '';
+  callDot.className     = 'call-indicator';
+  callTimer.textContent = '00:00';
+  setStage(0);
+  btnStart.disabled      = false;
+  btnStart.style.display = '';
+  btnReset.style.display = 'none';
+}
+
+btnStart.addEventListener('click', runSimulation);
+btnReset.addEventListener('click', resetSim);
+
+// ── Live scan ──────────────────────────────────────────────────────────────
+const scanTA      = document.getElementById('scan-ta');
+const btnScan     = document.getElementById('btn-scan');
+const scanSpinner = document.getElementById('scan-spinner');
+const scanStatus  = document.getElementById('scan-status-msg');
+const scanResult  = document.getElementById('scan-result-wrap');
+
+const STAGE_NAMES_FULL = [
+  'Setup / Pre-contact', 'Pretext', 'Fear & Authority',
+  'Isolation & Control', 'Extraction', 'Prolongation',
+];
+
+function renderResult(data) {
+  const stageName = STAGE_NAMES_FULL[data.stage] || `Stage ${data.stage}`;
+  const flagPills = (data.red_flags || []).map(f => `<span class="flag-pill">${f}</span>`).join('') || '<span style="color:var(--t2);font-size:12px">None</span>';
+  const vc = document.createElement('div');
+  vc.className = `vcard ${data.verdict}`;
+  vc.innerHTML = `
+    <div class="vcard-header">
+      <span class="vcard-verdict">${data.verdict}</span>
+      <span class="vcard-stage">Stage ${data.stage} / 5 — ${stageName}</span>
+    </div>
+    <div class="section-label">Red flags</div>
+    <div class="flag-row">${flagPills}</div>
+    <div class="section-label" style="margin-top:10px">Reason</div>
+    <div class="vcard-reason">${data.reason}</div>
+  `;
+  return vc;
+}
+
+function renderError(msg) {
+  const vc = document.createElement('div');
+  vc.className = 'vcard error';
+  vc.innerHTML = `<div class="vcard-verdict" style="font-size:13px">Scan failed</div>
+    <div class="vcard-reason" style="margin-top:6px">${msg}</div>`;
+  return vc;
+}
+
+btnScan.addEventListener('click', async () => {
+  const text = scanTA.value.trim();
+  if (!text) { scanStatus.textContent = 'Paste a transcript first.'; return; }
+
+  btnScan.disabled = true;
+  scanSpinner.style.display = 'inline-block';
+  scanStatus.textContent = 'Scanning…';
+  scanResult.innerHTML = '';
+
+  try {
+    const resp = await fetch('/scan-text', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ transcript: text }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.detail || `Server returned ${resp.status}`);
+    }
+    const data = await resp.json();
+    scanResult.innerHTML = '';
+    scanResult.appendChild(renderResult(data));
+    scanStatus.textContent = '';
+  } catch (e) {
+    scanResult.innerHTML = '';
+    const isNetwork = e instanceof TypeError;
+    scanResult.appendChild(renderError(
+      isNetwork
+        ? 'Could not reach the server. Make sure <code>python src/server.py</code> is running on port 8000.'
+        : e.message
+    ));
+    scanStatus.textContent = '';
+  } finally {
+    btnScan.disabled = false;
+    scanSpinner.style.display = 'none';
+  }
+});
+</script>
+</body>
+</html>
